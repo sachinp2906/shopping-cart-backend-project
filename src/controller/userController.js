@@ -151,8 +151,57 @@ catch(err) {
 }
 }
 
-module.exports.createUser = createUser
+// module.exports.createUser = createUser
 
+
+
+
+
+//-------------------------------------------------- Login API -------------------------------------------------------//
+
+const userLogin = async function(req,res){
+    try{
+        if(!req.body){ res.status(400).send({status:false, message:"Body can not be empty"}) }
+
+        const {email,password}=req.body
+
+        if(!email){ res.status(400).send({status:false, message:"email is mandatory"}) }
+        if(isValidEmail(email)){ res.status(400).send({status:false, message:"Enter valid email."}) }
+
+        if(!password){ res.status(400).send({status:false, message:"password is mandatory"}) }
+       
+
+        //finding users details from email,password..
+        let userData = await userModel.findOne({email:email,password:password})
+    
+        if(!userData){res.status(404).send({status:false, message:"email/password not found."})}
+
+         //Token generation..
+        const userId = userData._id.toString()
+        const token = jwt.sign(
+            {userId: userId },
+            "SecretKey Project 5",
+            {expiresIn:'1h'}
+        )
+
+        let responseData = {
+            userId: userId,
+            token: token
+        }
+
+        res.status(200).send({status:true ,message:"User login successful", data: responseData})
+
+    }
+    catch(err){
+        res.status(500).send( {status:false, message:err.message} );
+    }
+}
+
+
+
+
+
+//------------------------------------------------- Get USER API -----------------------------------------------------//
 
 const getUserData= async function (req,res){
 
@@ -168,4 +217,4 @@ const getUserData= async function (req,res){
     }
 }
 
-module.exports={getUserData}
+module.exports={getUserData,userLogin,createUser}
