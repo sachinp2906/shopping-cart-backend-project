@@ -114,7 +114,7 @@ const createUser = async function (req , res) {
   }
   
   const userCreate = await userModel.create(data)
-  return res.status(200).send({status : true , message : "data created succesfully" , data : userCreate})
+  return res.status(201).send({status : true , message : "data created succesfully" , data : userCreate})
 }
 catch(err) {
   return res.status(500).send({status : false, message : err.message})
@@ -192,32 +192,32 @@ const updateUser = async function (req, res) {
           }
       }
   }
-  //VALIDATION_FOR_F-NAME_
+  
   if (fname) {
       if (!isValidName(fname)) return res.status(400).send({ status: false, message: `${fname} is not valid fname` })
   }
-  //VALIDATION_FOR_L-NAME_
+  
   if (lname) {
       if (!isValidName(lname)) return res.status(400).send({ status: false, message: `${lname} is not valid lname` })
   }
-  //VALIDATION_FOR_EMAIL
+ 
   if (email) {
       if (!isValidEmail(email)) return res.status(400).send({ status: false, message: `${email} is not valid email` })
   }
-  //VALIDATION_FOR_PASS
+  
   if (password) {
       if (!isValidPassword(password)) return res.status(400).send({ status: false, message: `${password} is not valid password` })
       req.body.password = await bcrypt.hash(password,10)
   }
-  //VALIDE_AND_UPDATE__PROFILE_IMG
+ 
   if (req.files.length > 0) {
      req.body.profileImage = await uploadFile(req.files[0])
   }
-  //VALIDATION_FOR_PHONE
+ 
   if (phone) {
       if (!isValidMobile(phone)) return res.status(400).send({ status: false, message: `${phone} is not valid phone number` })
   }
-  //VALIDATION_FOR_ADRESS
+  
   if (address) {
     if( typeof address!="object" ) {    
       JSON.parse(address)

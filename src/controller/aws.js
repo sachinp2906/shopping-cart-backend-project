@@ -24,14 +24,8 @@ aws.config.update({
         if(err) {
             return reject({"error": err})
         }
-        console.log(data)
-        console.log("file uploaded succesfully")
         return resolve(data.Location)
     })
-  
-    // let data= await s3.upload( uploadParams)
-    // if( data) return data.Location
-    // else return "there is an error"
   
    })
   }
