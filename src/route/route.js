@@ -1,7 +1,7 @@
 const express= require('express')
 const router= express.Router()
 const {getUserData,userLogin,createUser,updateUser}= require('../controller/userController')
-const {createProduct} = require('../controller/productController')
+const {createProduct,getAllProducts,getProductById} = require('../controller/productController')
 const {authentication,authorisation}=require('../auth/auth')
 
 //-------------------- User Apis -----------------------//
@@ -13,8 +13,8 @@ router.put('/user/:userId/profile',authentication,authorisation,updateUser)
 
 //--------------------Product Apis -------------------//
 router.post('/products',createProduct)
-
-
+router.get('/products',getAllProducts)
+router.get('/products/:productId',getProductById)
 
 
 
