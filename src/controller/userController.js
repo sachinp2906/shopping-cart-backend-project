@@ -3,36 +3,7 @@ const { isValidString,isValidPincode, isValidName, isValidMobile, isValidPasswor
 const aws = require('aws-sdk')
 const bcrypt = require('bcrypt')
 const jwt=require('jsonwebtoken')
-
-//////////////////////////////////////////////********AWS**********////////////////////////////////////////////////////
-aws.config.update({
-  accessKeyId: "AKIAY3L35MCRZNIRGT6N",
-  secretAccessKey: "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",
-  region: "ap-south-1"
-})
-
-let uploadFile= async ( file) =>{
- return new Promise( function(resolve, reject) {
-  // this function will upload file to aws and return the link
-  let s3= new aws.S3({apiVersion: '2006-03-01'}); // we will be using the s3 service of aws
-
-  var uploadParams= {
-      ACL: "public-read",
-      Bucket: "classroom-training-bucket",  //HERE
-      Key: "abc/" + file.originalname, //HERE 
-      Body: file.buffer
-  }
-
-  s3.upload( uploadParams, function (err, data ){
-      if(err) {
-          return reject({"error": err})
-      }
-      return resolve(data.Location)
-  })
-
- })
-}
-
+const {uploadFile}=require('./aws')
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -205,4 +176,83 @@ const getUserData= async function (req,res){
     }
 }
 
-module.exports={getUserData,userLogin,createUser}
+//////
+//                        >>>-----> UPDATE_USER <-----<<<
+const updateUser = async function (req, res) {
+  const { userId } = req.params
+  const { fname, lname, email, phone, password, address } = req.body
+  //CHECK_VALIDATION_FOR_STRING_PROPERTIES
+  let request_body = Object.keys(req.body)
+  if(request_body.length==0 && !req.files) return res.status(400).send({status:false,message:"request body is empty !!"})
+  for (let i = 0; i < request_body.length; i++) {
+      const element = request_body[i];
+      if (element != "address") {
+          if (!isValidString(req.body[element])) {
+              return res.status(400).json({ status: false, message: `please provide the valid ${element} ` })
+          }
+      }
+  }
+  //VALIDATION_FOR_F-NAME_
+  if (fname) {
+      if (!isValidName(fname)) return res.status(400).send({ status: false, message: `${fname} is not valid fname` })
+  }
+  //VALIDATION_FOR_L-NAME_
+  if (lname) {
+      if (!isValidName(lname)) return res.status(400).send({ status: false, message: `${lname} is not valid lname` })
+  }
+  //VALIDATION_FOR_EMAIL
+  if (email) {
+      if (!isValidEmail(email)) return res.status(400).send({ status: false, message: `${email} is not valid email` })
+  }
+  //VALIDATION_FOR_PASS
+  if (password) {
+      if (!isValidPassword(password)) return res.status(400).send({ status: false, message: `${password} is not valid password` })
+      req.body.password = await bcrypt.hash(password,10)
+  }
+  //VALIDE_AND_UPDATE__PROFILE_IMG
+  if (req.files.length > 0) {
+     req.body.profileImage = await uploadFile(req.files[0])
+  }
+  //VALIDATION_FOR_PHONE
+  if (phone) {
+      if (!isValidMobile(phone)) return res.status(400).send({ status: false, message: `${phone} is not valid phone number` })
+  }
+  //VALIDATION_FOR_ADRESS
+  if (address) {
+    if( typeof address!="object" ) {    
+      JSON.parse(address)
+    }
+     //UPDATE_SHIPPING_DATA
+     const{shipping,billing}=address
+      if (shipping ) {  
+          const { street, city, pincode } = address.shipping     
+          if (street) {
+              if (!isValidName(street) || !isValidString(street)) return res.status(400).send({ status: false, message: `${street} is not valid phone street` })
+          }
+          if (city) {
+              if (!isValidName(city) || !isValidString(city)) return res.status(400).send({ status: false, message: `${city} is not valid phone city` })
+          }   
+          if (pincode) {
+              if (!isValidPincode(pincode)) return res.status(400).send({ status: false, message: `${pincode} is not valid phone pincode` })
+          }
+      }
+      //UPDATE_BILLING_DATA
+      if (billing ) {
+        const { street, city, pincode } = address.billing
+        if (street) {
+            if (!isValidName(street) || !isValidString(street)) return res.status(400).send({ status: false, message: `${street} is not valid phone street` })
+        }
+        if (city) {
+            if (!isValidName(city) || !isValidString(city)) return res.status(400).send({ status: false, message: `${city} is not valid phone city` }) 
+        }
+        if (pincode) {
+            if  (!isValidPincode(pincode))return res.status(400).send({ status: false, message: `${pincode} is not valid phone pincode` })  
+        }
+      }
+  }
+  //UPDATE_USER_DATA
+  let updateData = await userModel.findByIdAndUpdate({ _id: userId }, req.body, { new: true })
+  return res.status(200).json({ status: true, message: "User profile details", data: updateData })
+}
+
+module.exports={getUserData,userLogin,createUser,updateUser}
