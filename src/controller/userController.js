@@ -1,7 +1,8 @@
 const userModel= require('../model/userModel')
-const { isValidString, isValidName, isValidMobile, isValidPassword, isValidEmail , isIdValid} = require('../validation/validator')
+const { isValidString,isValidPincode, isValidName, isValidMobile, isValidPassword, isValidEmail , isIdValid} = require('../validation/validator')
 const aws = require('aws-sdk')
 const bcrypt = require('bcrypt')
+const jwt=require('jsonwebtoken')
 
 //////////////////////////////////////////////********AWS**********////////////////////////////////////////////////////
 aws.config.update({
@@ -22,19 +23,12 @@ let uploadFile= async ( file) =>{
       Body: file.buffer
   }
 
-
   s3.upload( uploadParams, function (err, data ){
       if(err) {
           return reject({"error": err})
       }
-      console.log(data)
-      console.log("file uploaded succesfully")
       return resolve(data.Location)
   })
-
-  // let data= await s3.upload( uploadParams)
-  // if( data) return data.Location
-  // else return "there is an error"
 
  })
 }
@@ -45,20 +39,23 @@ let uploadFile= async ( file) =>{
 const createUser = async function (req , res) {
   try{
     let files = req.files
+    let data=req.body
+   
+    if (Object.keys(data).length == 0) {
+      return res.status(400).send({ status: false, message: "request body can't be empty" })
+    }
     if(files && files.length>0) {
       let uploadFileUrl = await uploadFile(files[0])
-      req.body.profileImage = uploadFileUrl
+      data.profileImage = uploadFileUrl
     }
-  const { fname, lname, email, profileImage, phone, password, address } = req.body
-  // let files = req.files
-  // console.log(files)
-  // if(files && files.length>0) {
-  //   let uploadFileUrl = await uploadFile(files[0])
-  //   req.body.profileImage = uploadFileUrl
-  // }
-  if (Object.keys(req.body).length == 0) {
-    return res.status(400).send({ status: false, message: "request body can't be empty" })
-  }
+ 
+    if(data.address){
+      data.address=JSON.parse(data.address)
+      
+    }
+
+  let { fname, lname, email, profileImage, phone, password, address } = data
+  
   if (!fname) {
     return res.status(400).send({ status: false, message: "fname is required" })
   }
@@ -81,9 +78,9 @@ const createUser = async function (req , res) {
   if(findEmail) {
     return res.status(400).send({status : false, message : "email is already exist"})
   }
-  // if (!profileImage) {
-  //   return res.status(400).send({ status: false, message: "profileImage is required" })
-  // }
+  if (!profileImage) {
+    return res.status(400).send({ status: false, message: "profileImage is required" })
+  }
   if (!phone) {
     return res.status(400).send({ status: false, message: "phone number is required" })
   }
@@ -101,6 +98,7 @@ const createUser = async function (req , res) {
     return res.status(400).send({ status: false, message: "password is not valid" })
   }
   let hashedPassword = bcrypt.hashSync(password , 10)
+  data.password=hashedPassword
   if (!address) {
     return res.status(400).send({ status: false, message: "address is required" })
   }
@@ -119,7 +117,7 @@ const createUser = async function (req , res) {
         }
       }
       if (pincode) {
-        if (!/^[0-9]$/.test(pincode)) {
+        if (!isValidPincode(pincode)) {
           return res.status(400).send({ status: false, message: "please enter valid pincode" })
         }
       }
@@ -137,25 +135,20 @@ const createUser = async function (req , res) {
         }
       }
       if (pincode) {
-        if (!/^[0-9]$/.test(pincode)) {
+        if (!isValidPincode(pincode)) {
           return res.status(400).send({ status: false, message: "please enter valid pincode" })
         }
       }
     }
   }
-  const userCreate = await userModel.create({fname , lname , email , phone , profileImage , hashedPassword , address})
+  
+  const userCreate = await userModel.create(data)
   return res.status(200).send({status : true , message : "data created succesfully" , data : userCreate})
 }
 catch(err) {
   return res.status(500).send({status : false, message : err.message})
 }
 }
-
-// module.exports.createUser = createUser
-
-
-
-
 
 //-------------------------------------------------- Login API -------------------------------------------------------//
 
@@ -166,28 +159,23 @@ const userLogin = async function(req,res){
         const {email,password}=req.body
 
         if(!email){ res.status(400).send({status:false, message:"email is mandatory"}) }
-        if(isValidEmail(email)){ res.status(400).send({status:false, message:"Enter valid email."}) }
+        if(!isValidEmail(email)){ res.status(400).send({status:false, message:"Enter valid email."}) }
 
         if(!password){ res.status(400).send({status:false, message:"password is mandatory"}) }
        
-
+       
         //finding users details from email,password..
-        let userData = await userModel.findOne({email:email,password:password})
-    
+        let userData = await userModel.findOne({email:email})
         if(!userData){res.status(404).send({status:false, message:"email/password not found."})}
 
+        let newPassword=await bcrypt.compare(password, userData.password)
+        if(!newPassword) res.status(404).send({status:false, message:"incorrect password"})
+    
          //Token generation..
         const userId = userData._id.toString()
-        const token = jwt.sign(
-            {userId: userId },
-            "SecretKey Project 5",
-            {expiresIn:'1h'}
-        )
+        const token = jwt.sign({userId: userId },"SecretKey Project 5",{expiresIn:'1h'})
 
-        let responseData = {
-            userId: userId,
-            token: token
-        }
+        let responseData = {userId: userId,token: token }
 
         res.status(200).send({status:true ,message:"User login successful", data: responseData})
 
@@ -208,7 +196,7 @@ const getUserData= async function (req,res){
     try{
         let userId= req.params.userId
         if(!isIdValid(userId)) return res.status(400).send({status:false,message:"Invalid userId"})
-        let fetchData= await userModel.findOne({userId:_id})
+        let fetchData= await userModel.findOne({_id:userId})
         if(!fetchData) return res.status(404).send({status:false,message:"No data found with this userId"})
         return res.status(200).send({status:true,message:"User profile details",data:fetchData})
 

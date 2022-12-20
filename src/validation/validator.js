@@ -60,4 +60,9 @@ function isValidDate (date){
 
 //=============================// module exports //================================
 
-module.exports = {isValidDate,isValidISBN ,isValidPassword, isValidEmail, isIdValid, isValidString,isValidName,isValidMobile}
+
+  function isValidPincode (pincode){
+    return /^\d{6}$/.test(pincode)
+ }
+
+module.exports = {isValidDate,isValidISBN ,isValidPassword, isValidEmail, isIdValid, isValidString,isValidName,isValidMobile,isValidPincode}
