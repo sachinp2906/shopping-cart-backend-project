@@ -95,17 +95,39 @@ const getProductById = async function(req , res) {
     
     try{
         const productId = req.params.productId
-        if(!isIdValid(productId))   return res.status(400).send({status : false, message : "please provide valid object id"})
+        if(!isIdValid(productId))   return res.status(400).send({status : false, message : "please provide valid product id in path params"})
         
         const findProduct = await productModel.findById({isDeleted:false,_id:productId})
-        if(!findProduct)  return res.status(404).send({status : false, message : "product is not present"})
+        if(!findProduct)  return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
          return res.status(200).send({status : true , message : "data fetched succesfully" , data : findProduct})
+         
+    }catch(error){
+        return res.status(500).send({status:false,message:error.message})
+    }
+}
 
+const updateProduct = async function (req,res){
+    try{
+        if(Object.keys(req.body).length==0) return res.status(400).send({status:false, message:"Request body doesn't be empty"})
+       let {title,description,price,size,isFreeShipping,productImage}=req.body
     }catch(error){
         return res.status(500).send({status:false,message:error.message})
     }
 }
 
 
+const deleteProduct = async function (req,res){
+    try{
+       let id=req.params.productId
+       if(!isIdValid(id))  return res.status(400).send({status : false, message : "Please provide valid product id in path params"})
+       let deletedProd= await productModel.findOneAndUpdate({_id:id,isDeleted:false},{isDeleted:true,deletedAt:new Date()})
+       if(!deletedProd) return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
 
-module.exports={createProduct,getAllProducts,getProductById}
+       return res.status(200).send({status:true,messsage:"Product deleted successfully"})
+
+    }catch(error){
+        return res.status(500).send({status:false,message:error.message})
+    }
+}
+
+module.exports={createProduct,getAllProducts,getProductById,updateProduct,deleteProduct}
