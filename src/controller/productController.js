@@ -26,9 +26,9 @@ let createProduct = async function(req,res){
         if(!currencyFormat) return res.status(400).send({status:false, message:"currencyFormat is mandatory."})
         // if(!productImage) return res.status(400).send({status:false, message:"productImage is required."})
 
-        price=Number(price)
+        price=JSON.parse(price)
         if(installments){
-        installments=Number(installments)
+        installments=JSON.parse(installments)
         }
 
         //validation for corret data format..
@@ -38,7 +38,8 @@ let createProduct = async function(req,res){
         if(currencyId!=="INR"){return res.status(400).send({status:false,message:"Invalid currencyId, currencyId should be INR only"})}
         if(currencyFormat!="₹"){return res.status(400).send({status:false,message:"Invalid currencyFormat, currencyFormat should be ₹ only."})}
         if(isFreeShipping){
-        if(isFreeShipping!= Boolean) return res.status(400).send({status:false,message:"isFreeShipping should be Boolean value."})
+            isFreeShipping=JSON.parse(isFreeShipping)
+            if(isFreeShipping!= true && isFreeShipping!= false) return res.status(400).send({status:false,message:"isFreeShipping should be Boolean value."})
         }
         if(!isValidString(style)){return res.status(400).send({status:false,message:"Invalid style input,style must be string."})}
         let arr=["S", "XS","M","X", "L","XXL", "XL"]
@@ -108,13 +109,58 @@ const getProductById = async function(req , res) {
 
 const updateProduct = async function (req,res){
     try{
+
+        const productId = req.params.productId
+        if(!isIdValid(productId))   return res.status(400).send({status : false, message : "please provide valid product id in path params"})
         if(Object.keys(req.body).length==0) return res.status(400).send({status:false, message:"Request body doesn't be empty"})
-       let {title,description,price,size,isFreeShipping,productImage}=req.body
+        let data=req.body
+        let file = req.files
+        if(file && file.length>0){ 
+            //uploading and getting url from aws s3..
+            let uploadFileUrl = await uploadFile(file[0])
+            //setting productImage to aws s3 url..
+            data.productImage = uploadFileUrl   
+        }
+
+        let {title,description,price,size,isFreeShipping,productImage,style,availableSizes,installments}=data
+        if(title){
+            if(!isValidString(title) && !isValidName(title)){return res.status(400).send({status:false, message:"Enter valid title."})}
+            const titleCheck = await productModel.findOne({title})
+            if(titleCheck){ return res.status(400).send({status : false, message : "title already exists. Please enter unique title."}) }
+        }
+        if(description){
+            if(!isValidString(description)){return res.status(400).send({status:false,message:"Enter some description.."})}
+        }
+        if(price){
+            price=JSON.parse(price)
+            if(typeof price != "number"){return res.status(400).send({status:false,message:"Invalid price entry, price should be a number."})}
+        }
+        if(isFreeShipping){
+            isFreeShipping=JSON.parse(isFreeShipping)
+            if(isFreeShipping!= true && isFreeShipping!= false) return res.status(400).send({status:false,message:"isFreeShipping should be Boolean value."})
+        }
+        if(style){
+            if(!isValidString(style)){return res.status(400).send({status:false,message:"Invalid style input,style must be string."})}
+        }   
+        if(availableSizes){
+            let arr=["S", "XS","M","X", "L","XXL", "XL"]
+            if(availableSizes.length>0){
+                if((!arr.includes(...availableSizes))) return res.status(400).send({status:false,message:"availableSizes can only be S, XS, M, X, L, XXL, XL "})
+            }
+        }
+        if(installments){
+            installments=JSON.parse(installments)
+            if(typeof installments!= "number"){return res.status(400).send({status:false,message:"Invalid installments entry, installments should be a number."})}
+        }
+        let updateProd= await productModel.findOneAndUpdate({isDeleted:false,_id:productId},{title,description,price,size,isFreeShipping,productImage,style,availableSizes,installments},{new:true})
+        if(!updateProd)  return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
+        
+        return res.status(200).send({status : true , message : "data fetched succesfully" , data : updateProd})
+        
     }catch(error){
         return res.status(500).send({status:false,message:error.message})
     }
 }
-
 
 const deleteProduct = async function (req,res){
     try{
