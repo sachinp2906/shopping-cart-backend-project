@@ -93,12 +93,19 @@ const getAllProducts= async function(req,res){
 
 const getProductById = async function(req , res) {
     
-    const productId = req.params.productId
-    if(!isIdValid(productId))   return res.status(400).send({status : false, message : "please provide valid object id"})
-    
-    const findProduct = await productModel.findById({isDeleted:false,_id:productId})
-    if(!findProduct)  return res.status(404).send({status : false, message : "product is not present"})
-     return res.status(200).send({status : true , message : "data fetched succesfully" , data : findProduct})
+    try{
+        const productId = req.params.productId
+        if(!isIdValid(productId))   return res.status(400).send({status : false, message : "please provide valid object id"})
+        
+        const findProduct = await productModel.findById({isDeleted:false,_id:productId})
+        if(!findProduct)  return res.status(404).send({status : false, message : "product is not present"})
+         return res.status(200).send({status : true , message : "data fetched succesfully" , data : findProduct})
+
+    }catch(error){
+        return res.status(500).send({status:false,message:error.message})
+    }
 }
+
+
 
 module.exports={createProduct,getAllProducts,getProductById}
