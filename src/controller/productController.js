@@ -64,12 +64,26 @@ let createProduct = async function(req,res){
 
 const getAllProducts= async function(req,res){
     try{
-         if(Object.keys(req.query).length==0){
+        if(Object.keys(req.query).length==0){
             let productData= await productModel.find({isDeleted:false}).sort({price:1})
             return res.status(200).send({status:true,message:"Success",data:productData})
-         }
-         let {size,name,priceGreaterThan,priceLessThan}=req.query
-         let productData= await productModel.find({$and:[{isDeleted:false},{$or:[{availableSizes:size},{title:name},{price:{$gt:priceGreaterThan}},{price:{$lt:priceLessThan}}]}]}).sort({price:1})
+        }
+        let {size,name,priceGreaterThan,priceLessThan,priceSortBy}=req.query
+
+        let obj={}
+        obj.isDeleted=false
+        
+        if (size)  obj.availableSizes = size
+        if (name)  obj.title = name 
+        if (priceGreaterThan)  obj.price = { $gt: priceGreaterThan }
+        if (priceLessThan)   obj.price = { $lt: priceLessThan }
+        if (priceGreaterThan && priceLessThan)   obj.price = { $gt: priceGreaterThan, $lt: priceLessThan }
+        if (priceSortBy) {
+            if (!(priceSortBy == -1 || priceSortBy == 1)) return res.status(400).send({ status: false, message: "Please Enter '1' for Sort in Ascending Order or '-1' for Sort in Descending Order" });
+        }
+
+        let productData= await productModel.find(obj).sort({price:priceSortBy})
+        if(!productData)  return res.status(404).send({status : false, message : "product is not present"})
         return res.status(200).send({status:true,message:"Success",data:productData})
 
     }catch(error){
