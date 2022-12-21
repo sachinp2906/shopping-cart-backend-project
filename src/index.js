@@ -10,7 +10,7 @@ mongoose.set('strictQuery', true)
 mongoose.connect('mongodb+srv://sarwjeet424:96568437528p@cluster0.8tsocgw.mongodb.net/group31Database',{useNewUrlParser:true})
 .then(()=> console.log("MongoDB Connected"))
 .catch((err)=> console.log(err))
-let PORT = 3000 || process.env.PORT
+let PORT = 3000 
 app.listen(PORT, ()=>{
     console.log(`Connected on Port ${PORT}`)
 })

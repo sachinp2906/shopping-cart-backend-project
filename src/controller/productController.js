@@ -155,7 +155,7 @@ const updateProduct = async function (req,res){
         let updateProd= await productModel.findOneAndUpdate({isDeleted:false,_id:productId},{title,description,price,size,isFreeShipping,productImage,style,availableSizes,installments},{new:true})
         if(!updateProd)  return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
         
-        return res.status(200).send({status : true , message : "data fetched succesfully" , data : updateProd})
+        return res.status(200).send({status : true , message : "data updated succesfully" , data : updateProd})
         
     }catch(error){
         return res.status(500).send({status:false,message:error.message})
