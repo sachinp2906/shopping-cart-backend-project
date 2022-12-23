@@ -1,18 +1,96 @@
 const cartModel = require('../model/cartModel')
-
+const productModel = require('../model/productModel')
+const userModel = require('../model/userModel')
+const { isIdValid } = require('../validation/validator')
 
 const createCart = async function (req,res){
     try{
+        let data= req.body
+        let userId= req.params.userId
+        if(!isIdValid(userId))  res.status(400).send({status:false, message:"Invalid userId in path params"})
+        if(Object.keys(data).length==0) res.status(400).send({status:false, message:"Request body can not be empty"})
+
+        let {productId}=data
+
+        if(!productId ) res.status(400).send({status:false, message:"productId is mandatory in body"})
+    
+        if(data.quantity && typeof data.quantity!="number") res.status(400).send({status:false, message:"quantity is is only be a number"})
+        if(!(data.quantity)){ 
+            data.quantity=1
+         }
+         let {quantity}=data
+                 
+        let useId = await userModel.findById(userId)
+        if(!useId) res.status(400).send({status:false, message:"userId doesn't exists"})
+
+        let prodData= await productModel.findById(productId)
+        if(!prodData) res.status(400).send({status:false, message:"productId doesn't exists"})
+
+        let cartData= await cartModel.findOne({userId})
+
+        if(cartData){
+            let totalCartItems=cartData.items
+            for(let a=0;a<totalCartItems.length;a++){
+                
+                if(productId==totalCartItems[a].productId){
+
+                totalCartItems[a].quantity=(totalCartItems[a].quantity)+quantity
+                           
+                delete data.quantity
+                delete data.productId
+        
+                data.items=totalCartItems
+                data.totalPrice= (cartData.totalPrice) + (quantity*(prodData.price))
        
+                let addCartData= await cartModel.findOneAndUpdate({userId},data,{new:true})
+       
+                return res.status(201).send({status:true,message:"Success",data:addCartData})
+                } 
+            }
+            
+         let obj={}
+         obj.productId=productId
+         obj.quantity=quantity
+         let existingData= cartData.items
+         existingData.push(obj)
+
+         delete data.quantity
+         delete data.productId
+
+         data.items=existingData
+         data.totalPrice= (cartData.totalPrice) + (quantity*(prodData.price))
+         data.totalItems=existingData.length
+
+         let addCartData= await cartModel.findOneAndUpdate({userId},data,{new:true})
+
+         return res.status(201).send({status:true,message:"Success",data:addCartData})
+
+        }
+        
+        let items=[]
+        let obj={}
+        obj.productId=productId
+        obj.quantity=quantity
+        items.push(obj)
+
+        delete data.quantity
+        delete data.productId
+ 
+        data.userId=userId
+        data.items=items
+        data.totalPrice=(quantity) * (prodData.price)
+        data.totalItems=items.length
+        let cartDatas= await cartModel.create(data)
+        
+        return res.status(201).send({status:true,message:"Success",data:cartDatas})
     }catch(error){
         return res.status(500).send({status:false,message:error.message})
     }
 }
 
-module.exports={createCart}
 
 
-exports.updateCart = async (req, res) => {
+const updateCart = async function (req, res){
     try {
         const { userId } = req.params
         const { cartId, productId, removeProduct } = req.body
@@ -66,7 +144,7 @@ exports.updateCart = async (req, res) => {
 
 }
 
-exports.getCartById = async function(req ,res) {
+const getCartById = async function(req ,res) {
     try{
     const userId = req.params.userId
     if(!userId) {
@@ -88,3 +166,5 @@ exports.getCartById = async function(req ,res) {
     return res.status(500).send({status : false , message : err.message})
 }
 }
+
+module.exports={createCart,updateCart,getCartById}
