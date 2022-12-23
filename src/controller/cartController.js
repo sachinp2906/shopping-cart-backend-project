@@ -65,3 +65,26 @@ exports.updateCart = async (req, res) => {
     }
 
 }
+
+exports.getCartById = async function(req ,res) {
+    try{
+    const userId = req.params.userId
+    if(!userId) {
+        return res.status(400).send({status : false , message : 'provide userid in path params'})
+    }
+    if(!isIdValid(id)) {
+         return res.status(400).send({status : false, message : "Please provide valid product id in path params"})
+    }
+    const findUserData = await cartModel.findById({_id : userId})
+    if(!findUserData) {
+        return res.status(404).send({status : false , message : "no such user found"})
+    }
+    const findCartData = await cartModel.findById({userId : userId})
+    if(!findCartData) {
+        return res.status(404).send({status : false, message : "no cart data with this id"})
+    }
+    return res.status(200).send({status : true , message : "data fetched successfully" , data : findCartData})
+} catch(err) {
+    return res.status(500).send({status : false , message : err.message})
+}
+}
