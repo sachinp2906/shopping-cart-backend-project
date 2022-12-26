@@ -2,6 +2,7 @@ const cartModel = require('../model/cartModel')
 const productModel = require('../model/productModel')
 const userModel = require('../model/userModel')
 const { isIdValid } = require('../validation/validator')
+const mongoose = require('mongoose')
 
 const createCart = async function (req,res){
     try{
@@ -163,4 +164,40 @@ const getCartById = async function(req ,res) {
 }
 }
 
-module.exports={createCart,updateCart,getCartById}
+
+
+
+
+const deleteCart = async function(req,res){
+    try{
+        const userId=req.params.userId
+
+        if(!userId){return res.status(400).send({status:false, message:"provide userId in path params"})}
+        if(!mongoose.isValidObjectId(userId)){return res.status(400).send({status:false, message:"Invalid userId."})}
+
+        //checking if user exists..
+        const userData = await userModel.findOne({_id:userId, isDeleted:false})
+        if(!userData){return res.status(404).send({status:false, message:"user does not exist"})}
+
+        //checking if cart exists for the user or not..
+        const cartData = await cartModel.findOne({userId:userId,isDeleted:false})
+        if(!cartData){return res.status(404).send({status:false, message:"cart not found"})}
+
+        const deletedCart= await cartModel.findOneAndUpdate({userId:userId},
+            {items:[], totalItems:0, totalPrice:0},
+            {new:true} )
+
+        return res.status(200).send({status:true, message:"Success"})    
+
+    }
+    catch(err){
+        res.status(500).send({status:false, message: err.message})
+    }
+}
+
+
+
+
+
+
+module.exports={createCart,updateCart,getCartById,deleteCart}

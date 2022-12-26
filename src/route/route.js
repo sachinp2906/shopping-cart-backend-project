@@ -3,7 +3,7 @@ const router= express.Router()
 const {getUserData,userLogin,createUser,updateUser}= require('../controller/userController')
 const {createProduct,getAllProducts,getProductById,updateProduct,deleteProduct} = require('../controller/productController')
 const {authentication,authorisation}=require('../auth/auth')
-const {createCart,updateCart,getCartById}=require('../controller/cartController')
+const {createCart,updateCart,getCartById,deleteCart}=require('../controller/cartController')
 
 //-------------------- User Apis -----------------------//
 router.post('/register',createUser)
@@ -23,6 +23,7 @@ router.delete('/products/:productId',deleteProduct)
 router.post('/users/:userId/cart',createCart)   
 router.put('/users/:userId/cart',updateCart)
 router.get('/users/:userId/cart',getCartById)
+router.post('/users/:userId/cart',deleteCart)
 
 
 router.all('/*',function (req,res){
