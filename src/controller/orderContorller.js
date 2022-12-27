@@ -1,29 +1,23 @@
-const {isValidObjectId}=require("mongoose")
+const {isIdValid}=require("../validation/validator")
 const cartModel = require("../model/cartModel")
+const userModel = require("../model/userModel")
+const orderModel=require('../model/orderModel')
 
-exports.createOrder=async (req,res)=>{
+const createOrder=async function (req,res){
     try{
     const {userId}=req.params
-    if(Object.keys(req.body).length==0){
-        return res.status(400).send({status:false,message:"please provide some data for create order"})
-    }
+    if(Object.keys(req.body).length==0)  return res.status(400).send({status:false,message:"please provide some data for create order"})
+    
     const {cartId,cancellable}=req.body
-    if(!cartId){
-        return res.status(400).send({status:false,message:"cartId is required"})
-    }
-    if(!isValidObjectId(cartId)){
-        return res.status(400).send({status:false,message:"invalid cartId"})
-    }
+    if(!cartId) return res.status(400).send({status:false,message:"cartId is required"})
+    
+    if(!isIdValid(cartId)) return res.status(400).send({status:false,message:"invalid cartId"})
+    
     let cart=await cartModel.findOne({_id:cartId,userId:userId})
-    if(!cart){
-        return res.status(404).send({status:false,message:"no any cart found for this perticular user"})
-    }
-
-    if( cancellable!="true"||cancellable!="false"){
-        return res.status(400).send({status:false,message:"cancellable should be boolean value"})
-    }
-
-
+    if(!cart) return res.status(404).send({status:false,message:"no any cart found for this perticular user"})
+    
+    if(cart.items.length==0) return res.status(404).send({status:false,message:"this card dont have any product"})
+    
   let createOrder={}
   createOrder.userId=userId
   createOrder.items=cart.items
@@ -46,3 +40,38 @@ exports.createOrder=async (req,res)=>{
     return res.status(500).send({status:false,message:err.message})
 }
 }
+
+const updateOrder =async function (req,res){
+    try{
+      
+        let data= req.body
+        if(Object.keys(data).length==0) return res.status(404).send({status:false,message:"Request body doesn't be empty"})
+
+        let userId = req.params.userId
+        if(!isIdValid(userId)) return res.status(400).send({status:false,message:"userId is invalid in Path params"})
+        let userData= await userModel.findById(userId) 
+        if(!userData)  return res.status(404).send({status:false,message:"No userData found with this userId"})
+   
+        let {orderId,status}=data
+        if(!status) return res.status(400).send({status:false,message:"status is required"})
+
+        if(!orderId) return res.status(400).send({status:false,message:"orderId is required"})
+        if(!isIdValid(orderId)) return res.status(400).send({status:false,message:"orderId is invalid in Req. body"})
+        let orderData = await orderModel.findOne({_id:orderId,isDeleted:false})
+        if(!orderData) return res.status(404).send({status:false,message:"Order is already deleted or doesn't exist"})
+
+        if(orderData.userId!=userId) return res.status(404).send({status:false,message:"orderId is not belongs to the userId"})
+        
+        if(orderData.cancellable==false && status=="cancled") return res.status(400).send({status:false,message:"this order is not cancled"})
+        
+        delete data.orderId
+    
+        let updateOrder = await orderModel.findOneAndUpdate({_id:orderId},data,{new:true})
+        return res.status(200).send({status:true,message:"Successfully updated Order",data:updateOrder}) 
+
+    }catch(err){
+    return res.status(500).send({status:false,message:err.message})
+}
+}
+
+module.exports={createOrder,updateOrder}

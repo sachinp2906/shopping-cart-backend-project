@@ -1,5 +1,5 @@
 const mongoose=require('mongoose')
-const ObjectId=mongoose.Types.ObjectId
+const ObjectId=mongoose.Schema.Types.ObjectId
 
 const orderSchema= new mongoose.Schema({
     userId:{
@@ -7,19 +7,15 @@ const orderSchema= new mongoose.Schema({
         ref:"Product",
         required:true
     },
-    items:{
-        type: Array,
-        productId:{
-            type:ObjectId,
-            ref:"Product",
-            required:true
-        },
-        quantity:{
-            type:Number,
-            required:true,
-            minimum:1
-        }
+    items:[{ productId:{
+        type:ObjectId,
+        ref:"Product",
+        required:true
     },
+    quantity:{
+        type:Number,
+        required:true
+    }}],
     totalPrice:{
         type:Number,
         required:true
@@ -38,7 +34,7 @@ const orderSchema= new mongoose.Schema({
     },
     status:{
         type:String,
-        required:true,
+        default:"pending",
         enum:["pending","completed","cancled"]
     },
     deletedAt:{

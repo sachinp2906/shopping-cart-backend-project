@@ -124,6 +124,7 @@ const updateCart = async function (req, res){
                 if (element.productId.toString() == productId) {
                     cart.items[i].quantity--;
                     updateData.items = cart.items
+                    updateData.totalPrice = cart.totalPrice - (product.price * cart.items[i].quantity)
                     if (cart.items[i].quantity === 0) {  //if product quantity is 0 , that time we can delete this product using splice method
                         cart.items.splice(i, 1);
                         updateData.items = cart.items
@@ -133,7 +134,7 @@ const updateCart = async function (req, res){
             }
         }
         if (Object.keys(updateData).length == 0) return res.status(400).send({ status: false, message: "this product is not exist in this cart " })
-        let updateCartDocument = await cartModel.findOneAndUpdate({ cartId },  updateData , { new: true }).select({_id:0,createdAt:0,updatedAt:0})
+        let updateCartDocument = await cartModel.findOneAndUpdate({_id: cartId },  updateData , { new: true }).select({_id:0,createdAt:0,updatedAt:0})
         return res.status(200).send({ status: true, message: 'cart updated successfully', data: updateCartDocument })
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message })
@@ -176,13 +177,14 @@ const deleteCart = async function(req,res){
         if(!mongoose.isValidObjectId(userId)){return res.status(400).send({status:false, message:"Invalid userId."})}
 
         //checking if user exists..
-        const userData = await userModel.findOne({_id:userId, isDeleted:false})
+        const userData = await userModel.findById(userId)
         if(!userData){return res.status(404).send({status:false, message:"user does not exist"})}
 
         //checking if cart exists for the user or not..
-        const cartData = await cartModel.findOne({userId:userId,isDeleted:false})
+        const cartData = await cartModel.findOne({userId:userId})
         if(!cartData){return res.status(404).send({status:false, message:"cart not found"})}
 
+        if(cartData.items.length==0) return res.status(400).send({status:false,message:"Card is already deleted"})
         const deletedCart= await cartModel.findOneAndUpdate({userId:userId},
             {items:[], totalItems:0, totalPrice:0},
             {new:true} )
