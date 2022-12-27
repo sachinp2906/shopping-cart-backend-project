@@ -62,15 +62,16 @@ const updateOrder =async function (req,res){
 
         if(orderData.userId!=userId) return res.status(404).send({status:false,message:"orderId is not belongs to the userId"})
         
-        if(orderData.cancellable==false && status=="cancled") return res.status(400).send({status:false,message:"this order is not cancled"})
+        if(orderData.cancellable==false && status=="cancled") return res.status(400).send({status:false,message:"order cannot be cancled."})
         
         delete data.orderId
     
         let updateOrder = await orderModel.findOneAndUpdate({_id:orderId},data,{new:true})
         return res.status(200).send({status:true,message:"Success",data:updateOrder}) 
 
-    }catch(err){
-    return res.status(500).send({status:false,message:err.message})
+    }
+    catch(err){
+        return res.status(500).send({status:false,message:err.message})
 }
 }
 

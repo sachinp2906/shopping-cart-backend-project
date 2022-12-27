@@ -5,7 +5,7 @@ const authentication = function (req,res,next){
   
     try{
        let token= req.headers.authorization
-       if(!token) res.status(400).send({status:false,message:"Token is required"})
+       if(!token) return res.status(400).send({status:false,message:"Token is required"})
        token=token.slice(7)
        jwt.verify(token,"SecretKey Project 5",function (err,decoded){
          if(err){

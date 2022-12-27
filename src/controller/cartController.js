@@ -161,7 +161,7 @@ const getCartById = async function(req ,res) {
     if(!findCartData) {
         return res.status(404).send({status : false, message : "no cart data with this id"})
     }
-    return res.status(200).send({status : true , message : "data fetched successfully" , data : findCartData})
+    return res.status(200).send({status : true , message : "Success" , data : findCartData})
 } catch(err) {
     return res.status(500).send({status : false , message : err.message})
 }
@@ -186,16 +186,18 @@ const deleteCart = async function(req,res){
         const cartData = await cartModel.findOne({userId:userId,isDeleted:false})
         if(!cartData){return res.status(404).send({status:false, message:"cart not found"})}
 
-        if(cartData.items.length==0) return res.status(400).send({status:false,message:"Card is already deleted"})
-       await cartModel.findOneAndUpdate({userId:userId},
+        // if(cartData.items.length==0) return res.status(400).send({status:false,message:"Card is already deleted"})
+
+        let cartData1 = await cartModel.findOneAndUpdate({userId:userId},
             {items:[], totalItems:0, totalPrice:0},
             {new:true} )
+            console.log(cartData1)
 
-        return res.status(200).send({status:true, message:"Success"})    
+        return res.status(204).send({status:true, message:"Success", data: cartData1})    //204 sends no res body....No content
 
     }
     catch(err){
-        res.status(500).send({status:false, message: err.message})
+       return res.status(500).send({status:false, message: err.message})
     }
 }
 
