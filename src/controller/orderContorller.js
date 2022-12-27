@@ -45,7 +45,7 @@ const updateOrder =async function (req,res){
     try{
       
         let data= req.body
-        if(Object.keys(data).length==0) return res.status(404).send({status:false,message:"Request body doesn't be empty"})
+        if(Object.keys(data).length==0) return res.status(400).send({status:false,message:"Request body doesn't be empty"})
 
         let userId = req.params.userId
         if(!isIdValid(userId)) return res.status(400).send({status:false,message:"userId is invalid in Path params"})
