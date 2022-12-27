@@ -100,7 +100,7 @@ const getProductById = async function(req , res) {
         
         const findProduct = await productModel.findById({isDeleted:false,_id:productId})
         if(!findProduct)  return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
-         return res.status(200).send({status : true , message : "data fetched succesfully" , data : findProduct})
+         return res.status(200).send({status : true , message : "Success" , data : findProduct})
          
     }catch(error){
         return res.status(500).send({status:false,message:error.message})
@@ -169,7 +169,7 @@ const deleteProduct = async function (req,res){
        let deletedProd= await productModel.findOneAndUpdate({_id:id,isDeleted:false},{isDeleted:true,deletedAt:new Date()})
        if(!deletedProd) return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
 
-       return res.status(200).send({status:true,messsage:"Product deleted successfully"})
+       return res.status(200).send({status:true,message:"Product deleted successfully"})
 
     }catch(error){
         return res.status(500).send({status:false,message:error.message})

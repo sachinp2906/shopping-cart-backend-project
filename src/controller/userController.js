@@ -78,7 +78,7 @@ const createUser = async function (req , res) {
     if (shipping) {
       const { street, city, pincode } = shipping
       if (street) {
-        if (!isValidName(street) || !isValidString(street)) {
+        if (!isValidString(street)) {
           return res.status(400).send({ status: false, message: "please enter valid street name" })
         }
       }
@@ -96,7 +96,7 @@ const createUser = async function (req , res) {
     if (billing) {
       const { street, city, pincode } = billing
       if (street) {
-        if (!isValidName(street) || !isValidString(street)) {
+        if ( !isValidString(street)) {
           return res.status(400).send({ status: false, message: "please enter valid street name" })
         }
       }
@@ -220,7 +220,7 @@ const updateUser = async function (req, res) {
   
   if (address) {
     if( typeof address!="object" ) {    
-      JSON.parse(address)
+     req.body.address= JSON.parse(address)
     }
      //UPDATE_SHIPPING_DATA
      const{shipping,billing}=address

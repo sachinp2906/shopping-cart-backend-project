@@ -67,7 +67,7 @@ const updateOrder =async function (req,res){
         delete data.orderId
     
         let updateOrder = await orderModel.findOneAndUpdate({_id:orderId},data,{new:true})
-        return res.status(200).send({status:true,message:"Successfully updated Order",data:updateOrder}) 
+        return res.status(200).send({status:true,message:"Success",data:updateOrder}) 
 
     }catch(err){
     return res.status(500).send({status:false,message:err.message})
