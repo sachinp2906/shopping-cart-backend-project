@@ -2,20 +2,20 @@ const mongoose = require("mongoose")
 const productSchema = new mongoose.Schema({
     title: {
         type: String,
-        requred: true,
+        required: true,
         unique: true
     },
     description: {
         type: String,
-        requred: true
+        required: true
     },
     price: {
         type: Number,
-        requred: true
+        required: true
     },
     currencyId: {
         type: String,
-        requred: true,
+        required: true,
         default: "INR"
     },
     currencyFormat: {

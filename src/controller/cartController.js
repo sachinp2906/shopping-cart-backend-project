@@ -8,24 +8,24 @@ const createCart = async function (req,res){
     try{
         let data= req.body
         let userId= req.params.userId
-        if(!isIdValid(userId))  res.status(400).send({status:false, message:"Invalid userId in path params"})
-        if(Object.keys(data).length==0) res.status(400).send({status:false, message:"Request body can not be empty"})
+        if(!isIdValid(userId)) return res.status(400).send({status:false, message:"Invalid userId in path params"})
+        if(Object.keys(data).length==0)return res.status(400).send({status:false, message:"Request body can not be empty"})
 
         let {productId}=data
 
-        if(!productId ) res.status(400).send({status:false, message:"productId is mandatory in body"})
+        if(!productId ) return res.status(400).send({status:false, message:"productId is mandatory in body"})
     
-        if(data.quantity && typeof data.quantity!="number") res.status(400).send({status:false, message:"quantity is is only be a number"})
+        if(data.quantity && typeof data.quantity!="number") return res.status(400).send({status:false, message:"quantity is is only be a number"})
         if(!(data.quantity)){ 
             data.quantity=1
          }
          let {quantity}=data
                  
         let useId = await userModel.findById(userId)
-        if(!useId) res.status(400).send({status:false, message:"userId doesn't exists"})
+        if(!useId) return res.status(400).send({status:false, message:"userId doesn't exists"})
 
         let prodData= await productModel.findById(productId)
-        if(!prodData) res.status(400).send({status:false, message:"productId doesn't exists"})
+        if(!prodData) return res.status(400).send({status:false, message:"productId doesn't exists"})
 
         let cartData= await cartModel.findOne({userId})
 
@@ -89,6 +89,8 @@ const createCart = async function (req,res){
     }
 }
 
+
+//----------------------------------Update CArt-------------------------------------//
 const updateCart = async function (req, res){
     try {
         const { userId } = req.params

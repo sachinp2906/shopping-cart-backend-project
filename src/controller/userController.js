@@ -75,8 +75,17 @@ const createUser = async function (req , res) {
   }
   if (address) {
     const { shipping, billing } = address
-    if (shipping) {
-      const { street, city, pincode } = shipping
+    if(!shipping){return  res.status(400).send({ status: false, message: "shipping is required" })}
+    if(!billing){return  res.status(400).send({ status: false, message: "billing is required" })}
+  
+     
+    if (shipping) { 
+
+      const { street, city, pincode } = shipping 
+      if(!street){return  res.status(400).send({ status: false, message: "street is required" })}
+      if(!city){return  res.status(400).send({ status: false, message: "city is required" })}
+      if(!pincode){return  res.status(400).send({ status: false, message: "pincode is required" })}
+
       if (street) {
         if (!isValidString(street)) {
           return res.status(400).send({ status: false, message: "please enter valid street name" })
@@ -95,6 +104,10 @@ const createUser = async function (req , res) {
     }
     if (billing) {
       const { street, city, pincode } = billing
+      if(!street){return  res.status(400).send({ status: false, message: "street is required" })}
+      if(!city){return  res.status(400).send({ status: false, message: "city is required" })}
+      if(!pincode){return  res.status(400).send({ status: false, message: "pincode is required" })}
+
       if (street) {
         if ( !isValidString(street)) {
           return res.status(400).send({ status: false, message: "please enter valid street name" })
@@ -125,34 +138,34 @@ catch(err) {
 
 const userLogin = async function(req,res){
     try{
-        if(!req.body){ res.status(400).send({status:false, message:"Body can not be empty"}) }
+        if(!req.body){ return res.status(400).send({status:false, message:"Body can not be empty"}) }
 
         const {email,password}=req.body
 
-        if(!email){ res.status(400).send({status:false, message:"email is mandatory"}) }
-        if(!isValidEmail(email)){ res.status(400).send({status:false, message:"Enter valid email."}) }
+        if(!email){ return res.status(400).send({status:false, message:"email is mandatory"}) }
+        if(!isValidEmail(email)){ return res.status(400).send({status:false, message:"Enter valid email."}) }
 
-        if(!password){ res.status(400).send({status:false, message:"password is mandatory"}) }
+        if(!password){ return res.status(400).send({status:false, message:"password is mandatory"}) }
        
        
         //finding users details from email,password..
         let userData = await userModel.findOne({email:email})
-        if(!userData){res.status(404).send({status:false, message:"email/password not found."})}
+        if(!userData){return res.status(404).send({status:false, message:"email/password not found."})}
 
         let newPassword=await bcrypt.compare(password, userData.password)
-        if(!newPassword) res.status(404).send({status:false, message:"incorrect password"})
+        if(!newPassword) return res.status(404).send({status:false, message:"incorrect password"})
     
          //Token generation..
         const userId = userData._id.toString()
-        const token = jwt.sign({userId: userId },"SecretKey Project 5",{expiresIn:'1h'})
+        const token = jwt.sign({userId: userId },"SecretKey Project 5",{expiresIn:'5h'})
 
         let responseData = {userId: userId,token: token }
 
-        res.status(200).send({status:true ,message:"User login successful", data: responseData})
+        return res.status(200).send({status:true ,message:"User login successful", data: responseData})
 
     }
     catch(err){
-        res.status(500).send( {status:false, message:err.message} );
+        return res.status(500).send( {status:false, message:err.message} );
     }
 }
 
@@ -176,16 +189,22 @@ const getUserData= async function (req,res){
     }
 }
 
-//////
-//                        >>>-----> UPDATE_USER <-----<<<
+
+
+//----------------------------------- UPDATE_USER ---------------------------------//
 const updateUser = async function (req, res) {
   const { userId } = req.params
   const { fname, lname, email, phone, password, address } = req.body
+  let itsMandatory=["fname", "lname", "email", "phone", "password", "address"]
   //CHECK_VALIDATION_FOR_STRING_PROPERTIES
   let request_body = Object.keys(req.body)
   if(request_body.length==0 && !req.files) return res.status(400).send({status:false,message:"request body is empty !!"})
   for (let i = 0; i < request_body.length; i++) {
       const element = request_body[i];
+      if(!itsMandatory.includes(element)){
+        return res.status(400).send({status:false,message:`${element} is not valid property for update data`})
+      }
+
       if (element != "address") {
           if (!isValidString(req.body[element])) {
               return res.status(400).json({ status: false, message: `please provide the valid ${element} ` })
@@ -255,4 +274,8 @@ const updateUser = async function (req, res) {
   return res.status(200).json({ status: true, message: "User profile details", data: updateData })
 }
 
+
+
 module.exports={getUserData,userLogin,createUser,updateUser}
+
+

@@ -16,6 +16,16 @@ let createProduct = async function(req,res){
 
         if(Object.keys(data1).length==0){ return res.status(400).send({status:false, message:"Request body doesn't be empty"})}
 
+        //for undefined keys..
+        let reqbodydata = Object.keys(data1)
+        let arr1 =["title","description", "price","currencyId","currencyFormat","isFreeShipping","style","availableSizes","installments","productImage"];
+        for (let i = 0; i < reqbodydata.length; i++) {
+            const element = reqbodydata[i];
+            
+            if(!arr1.includes(element)) return res.status(400).send({status:false, message:`${element} is not a valid/defined property.`})
+        }
+
+
         let {title,description, price,currencyId,currencyFormat,isFreeShipping,style,availableSizes,installments} = data1
 
         //validation for Empty input..
@@ -63,6 +73,9 @@ let createProduct = async function(req,res){
     }
 }
 
+
+//--------------------------------------------------------------------------//
+
 const getAllProducts= async function(req,res){
     try{
         if(Object.keys(req.query).length==0){
@@ -84,6 +97,7 @@ const getAllProducts= async function(req,res){
         }
 
         let productData= await productModel.find(obj).sort({price:priceSortBy})
+
         if(!productData)  return res.status(404).send({status : false, message : "product is not present"})
         return res.status(200).send({status:true,message:"Success",data:productData})
 
@@ -92,13 +106,14 @@ const getAllProducts= async function(req,res){
     }
 }
 
+//-----------------------------------------------------------------------------------------//
 const getProductById = async function(req , res) {
     
     try{
         const productId = req.params.productId
         if(!isIdValid(productId))   return res.status(400).send({status : false, message : "please provide valid product id in path params"})
         
-        const findProduct = await productModel.findById({isDeleted:false,_id:productId})
+        const findProduct = await productModel.findOne({isDeleted:false,_id:productId})
         if(!findProduct)  return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
          return res.status(200).send({status : true , message : "Success" , data : findProduct})
          
@@ -122,7 +137,18 @@ const updateProduct = async function (req,res){
             data.productImage = uploadFileUrl   
         }
 
+        //for undefined keys..
+        let reqbodydata = Object.keys(data)
+        let arr1 =["title","description", "price","size","isFreeShipping","style","availableSizes","installments","productImage"];
+        for (let i = 0; i < reqbodydata.length; i++) {
+            const element = reqbodydata[i];
+            
+            if(!arr1.includes(element)) return res.status(400).send({status:false, message:`${element} is not a valid/defined property.`})
+        }
+
         let {title,description,price,size,isFreeShipping,productImage,style,availableSizes,installments}=data
+        
+
         if(title){
             if(!isValidString(title) && !isValidName(title)){return res.status(400).send({status:false, message:"Enter valid title."})}
             const titleCheck = await productModel.findOne({title})
@@ -166,10 +192,12 @@ const deleteProduct = async function (req,res){
     try{
        let id=req.params.productId
        if(!isIdValid(id))  return res.status(400).send({status : false, message : "Please provide valid product id in path params"})
+
        let deletedProd= await productModel.findOneAndUpdate({_id:id,isDeleted:false},{isDeleted:true,deletedAt:new Date()})
+
        if(!deletedProd) return res.status(404).send({status : false, message : "Product is already deleted or doesn't exist"})
 
-       return res.status(200).send({status:true,message:"Product deleted successfully"})
+       return res.status(200).send({status:true,message:"Success"})
 
     }catch(error){
         return res.status(500).send({status:false,message:error.message})
